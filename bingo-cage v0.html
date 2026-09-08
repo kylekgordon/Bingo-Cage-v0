@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo Cage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --felt-dark:#0f3324;
+    --felt:#164a34;
+    --felt-light:#2c7a4b;
+    --cream:#f4ecd8;
+    --cream-dim:#e3d6b4;
+    --ink:#1c150d;
+    --brass:#cea23a;
+    --brass-dark:#96721f;
+    --maroon:#a3403c;
+    --blue:#3d6ea5;
+    --shadow: 0 18px 40px rgba(0,0,0,.35);
+    --radius-lg: 22px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at 50% -10%, #1d6a45 0%, transparent 60%),
+      linear-gradient(180deg, var(--felt-dark), #0a2419 80%);
+    color:var(--cream);
+    font-family:'Space Grotesk', sans-serif;
+    display:flex;
+    justify-content:center;
+    padding: clamp(20px, 4vw, 48px) 16px 60px;
+  }
+  .app{
+    width:100%;
+    max-width:920px;
+  }
+  header.top{
+    text-align:center;
+    margin-bottom: clamp(18px, 3vw, 32px);
+  }
+  header.top h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-optical-sizing:auto;
+    font-size:clamp(2rem, 5vw, 3.1rem);
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+    color:var(--cream);
+  }
+  header.top p{
+    margin:0;
+    color:var(--cream-dim);
+    font-size:clamp(.95rem,2vw,1.05rem);
+  }
+
+  .layout{
+    display:flex;
+    gap:clamp(20px,4vw,48px);
+    align-items:flex-start;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  /* ---------- CAGE ---------- */
+  .cage-column{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    flex: 0 0 auto;
+  }
+  .cage-stage{
+    position:relative;
+    width:min(66vw, 320px);
+    aspect-ratio:1/1;
+  }
+  .cage-drum{
+    position:absolute;
+    inset:8%;
+    border-radius:50%;
+    overflow:hidden;
+    background:
+      radial-gradient(circle at 35% 30%, #1e5c3d 0%, #123c28 55%, #0c2e1e 100%);
+    box-shadow: inset 0 0 30px rgba(0,0,0,.55);
+  }
+  .balls-layer{
+    position:absolute;
+    inset:0;
+    transition: opacity .35s ease;
+  }
+  .balls-layer.spinning{
+    animation: drumSpin .85s linear infinite;
+  }
+  @keyframes drumSpin{
+    from{ transform: rotate(0deg); }
+    to{ transform: rotate(360deg); }
+  }
+  .ball-pos{
+    position:absolute;
+    width:16%;
+    height:16%;
+    transform: translate(-50%,-50%);
+  }
+  .ball{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    box-shadow: inset -2px -3px 4px rgba(0,0,0,.35), inset 2px 2px 3px rgba(255,255,255,.4), 0 2px 4px rgba(0,0,0,.4);
+    animation: floatBall 2s ease-in-out infinite;
+  }
+  .spinning .ball{
+    animation-name: shakeBall;
+    animation-duration:.3s;
+  }
+  @keyframes floatBall{
+    0%,100%{ transform: translate(0,0); }
+    50%{ transform: translate(var(--dx), var(--dy)); }
+  }
+  @keyframes shakeBall{
+    0%,100%{ transform: translate(0,0); }
+    50%{ transform: translate(var(--dx), var(--dy)); }
+  }
+  .ball-cream{ background: var(--cream); }
+  .ball-brass{ background: var(--brass); }
+  .ball-blue{ background: var(--blue); }
+  .ball-green{ background: var(--felt-light); }
+  .ball-maroon{ background: var(--maroon); }
+
+  svg.cage-mesh{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+  }
+  .cage-crank{
+    position:absolute;
+    right:-4%;
+    top:50%;
+    width:16%;
+    height:16%;
+    transform: translateY(-50%);
+    transform-origin:center;
+  }
+  .cage-crank.spinning{
+    animation: crankSpin .85s linear infinite;
+  }
+  @keyframes crankSpin{
+    from{ transform: translateY(-50%) rotate(0deg); }
+    to{ transform: translateY(-50%) rotate(360deg); }
+  }
+
+  .cage-stand{
+    width:38%;
+    height:16px;
+    margin-top:-6px;
+    background: linear-gradient(180deg, var(--brass), var(--brass-dark));
+    clip-path: polygon(15% 0, 85% 0, 100% 100%, 0 100%);
+  }
+  .cage-legs{
+    width:52%;
+    height:10px;
+    background: linear-gradient(180deg, var(--brass-dark), #6e5115);
+    clip-path: polygon(8% 0, 92% 0, 100% 100%, 0 100%);
+  }
+
+  /* ---------- RESULT PANEL ---------- */
+  .result-panel{
+    flex: 0 0 auto;
+    width:min(100%, 300px);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+  }
+  .result-label{
+    font-size:.85rem;
+    color:var(--cream-dim);
+  }
+  .result-tray{
+    width:100%;
+    background: linear-gradient(180deg, #1a4530, #0e2c1d);
+    border:1px solid rgba(206,162,58,.35);
+    border-radius: var(--radius-lg);
+    padding: 22px 18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    min-height:150px;
+    justify-content:center;
+    box-shadow: var(--shadow);
+  }
+  .result-ball{
+    width:84px;
+    height:84px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: radial-gradient(circle at 35% 30%, #fff8e6, var(--cream) 60%, var(--cream-dim) 100%);
+    box-shadow: inset -4px -6px 8px rgba(0,0,0,.25), inset 3px 3px 5px rgba(255,255,255,.6), 0 6px 14px rgba(0,0,0,.4);
+    color: var(--ink);
+    font-family:'Fraunces', serif;
+    font-weight:800;
+    font-size:1.7rem;
+    flex-shrink:0;
+    transform: scale(.4);
+    opacity:0;
+  }
+  .result-ball.show{
+    animation: popIn .5s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes popIn{
+    0%{ transform: scale(.3) rotate(-15deg); opacity:0; }
+    60%{ transform: scale(1.12) rotate(4deg); opacity:1; }
+    100%{ transform: scale(1) rotate(0deg); opacity:1; }
+  }
+  .result-name{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.05rem;
+    text-align:center;
+    color: var(--cream);
+    opacity:0;
+    max-width:100%;
+    overflow-wrap:anywhere;
+  }
+  .result-name.show{
+    animation: fadeUp .45s ease .1s forwards;
+  }
+  @keyframes fadeUp{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .result-empty{
+    color: var(--cream-dim);
+    font-size:.95rem;
+    text-align:center;
+  }
+
+  .spin-btn{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    width:100%;
+    padding:16px 20px;
+    border-radius:999px;
+    background: linear-gradient(180deg, #d8ae4a, var(--brass-dark));
+    color:#241a05;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:1.05rem;
+    letter-spacing:.01em;
+    box-shadow: 0 8px 0 #5f4711, 0 12px 18px rgba(0,0,0,.4);
+    transition: transform .08s ease, box-shadow .08s ease;
+  }
+  .spin-btn:active:not(:disabled){
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 #5f4711, 0 4px 10px rgba(0,0,0,.4);
+  }
+  .spin-btn:disabled{
+    cursor:not-allowed;
+    opacity:.6;
+    box-shadow: 0 8px 0 #5f4711, 0 12px 18px rgba(0,0,0,.25);
+  }
+  .spin-btn:focus-visible{
+    outline: 3px solid var(--cream);
+    outline-offset:3px;
+  }
+
+  .secondary-row{
+    display:flex;
+    gap:10px;
+    width:100%;
+  }
+  .btn-ghost{
+    flex:1;
+    appearance:none;
+    cursor:pointer;
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid rgba(244,236,216,.35);
+    background:transparent;
+    color:var(--cream);
+    font-family:'Space Grotesk', sans-serif;
+    font-size:.85rem;
+    font-weight:500;
+    transition: background .15s ease;
+  }
+  .btn-ghost:hover{ background: rgba(244,236,216,.08); }
+  .btn-ghost:focus-visible{ outline: 2px solid var(--cream); outline-offset:2px; }
+
+  .remaining{
+    font-size:.85rem;
+    color:var(--cream-dim);
+    text-align:center;
+  }
+  .remaining strong{ color:var(--cream); }
+
+  /* ---------- HISTORY ---------- */
+  .history{
+    margin-top:clamp(28px,4vw,44px);
+  }
+  .history h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.1rem;
+    margin:0 0 10px;
+    color:var(--cream);
+  }
+  .history-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    max-height:150px;
+    overflow-y:auto;
+    padding-right:4px;
+  }
+  .chip{
+    background: rgba(244,236,216,.1);
+    border:1px solid rgba(244,236,216,.18);
+    color:var(--cream);
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:.85rem;
+    white-space:nowrap;
+  }
+  .chip.latest{
+    background: var(--brass);
+    color:#241a05;
+    font-weight:600;
+    border-color:transparent;
+  }
+  .history-empty{
+    color:var(--cream-dim);
+    font-size:.9rem;
+  }
+
+  /* ---------- SETTINGS ---------- */
+  details.settings{
+    margin-top:clamp(24px,4vw,36px);
+    background: rgba(244,236,216,.06);
+    border:1px solid rgba(244,236,216,.15);
+    border-radius:16px;
+    padding:4px 18px;
+  }
+  details.settings[open]{ padding-bottom:18px; }
+  details.settings summary{
+    cursor:pointer;
+    padding:14px 0;
+    font-weight:600;
+    font-size:1rem;
+    color:var(--cream);
+    list-style:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  details.settings summary::-webkit-details-marker{ display:none; }
+  details.settings summary::after{
+    content:'+';
+    font-size:1.4rem;
+    color:var(--brass);
+    transition: transform .2s ease;
+  }
+  details.settings[open] summary::after{ transform: rotate(45deg); }
+
+  .source-choice{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+  }
+  .source-choice label{
+    flex:1;
+    min-width:120px;
+    text-align:center;
+    padding:10px 8px;
+    border-radius:10px;
+    border:1px solid rgba(244,236,216,.2);
+    cursor:pointer;
+    font-size:.9rem;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .source-choice input{ position:absolute; opacity:0; pointer-events:none; }
+  .source-choice label:has(input:checked){
+    background: var(--brass);
+    color:#241a05;
+    border-color:transparent;
+    font-weight:600;
+  }
+  .source-choice label:has(input:focus-visible){
+    outline:2px solid var(--cream);
+    outline-offset:2px;
+  }
+
+  .source-fields{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .source-fields label{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    font-size:.85rem;
+    color:var(--cream-dim);
+    flex:1;
+    min-width:130px;
+  }
+  .source-fields input[type=number],
+  .source-fields select,
+  .source-fields textarea{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:.95rem;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1px solid rgba(244,236,216,.25);
+    background: rgba(12,44,29,.6);
+    color:var(--cream);
+  }
+  .source-fields textarea{
+    min-height:110px;
+    resize:vertical;
+    width:100%;
+    font-family: inherit;
+  }
+  .source-fields input:focus-visible,
+  .source-fields select:focus-visible,
+  .source-fields textarea:focus-visible{
+    outline:2px solid var(--brass);
+    outline-offset:1px;
+  }
+
+  .settings-actions{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .btn-primary{
+    appearance:none;
+    cursor:pointer;
+    border:none;
+    padding:11px 22px;
+    border-radius:999px;
+    background: var(--brass);
+    color:#241a05;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:.95rem;
+  }
+  .btn-primary:focus-visible{ outline:2px solid var(--cream); outline-offset:2px; }
+  .settings-hint{
+    font-size:.85rem;
+    color: var(--maroon);
+    margin:10px 0 0;
+    min-height:1em;
+  }
+  .settings-hint.ok{ color: #8fd6a8; }
+
+  .sr-only{
+    position:absolute;
+    width:1px;height:1px;
+    padding:0;margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .balls-layer.spinning,
+    .cage-crank.spinning,
+    .ball,
+    .spinning .ball{ animation: none !important; }
+    .result-ball.show, .result-name.show{ animation-duration:.01s !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>The Bingo Cage</h1>
+    <p>Give it a crank, and let the cage pick.</p>
+  </header>
+
+  <div class="layout">
+    <div class="cage-column">
+      <div class="cage-stage">
+        <div class="cage-drum">
+          <div class="balls-layer" id="ballsLayer"></div>
+        </div>
+        <svg class="cage-mesh" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <pattern id="mesh" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="7" stroke="rgba(206,162,58,.28)" stroke-width="0.6"/>
+              <line x1="0" y1="0" x2="7" y2="0" stroke="rgba(206,162,58,.28)" stroke-width="0.6"/>
+            </pattern>
+          </defs>
+          <circle cx="50" cy="50" r="42" fill="url(#mesh)" />
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--brass)" stroke-width="3.5"/>
+          <path d="M 22 24 A 40 40 0 0 1 55 10" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-linecap="round"/>
+          <rect x="42" y="88" width="16" height="7" rx="2" fill="var(--brass-dark)" stroke="var(--brass)" stroke-width="1"/>
+        </svg>
+        <div class="cage-crank" id="cageCrank" aria-hidden="true">
+          <svg viewBox="0 0 100 100" width="100%" height="100%">
+            <line x1="50" y1="50" x2="90" y2="50" stroke="var(--brass-dark)" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="9" fill="var(--brass)"/>
+            <circle cx="88" cy="50" r="10" fill="var(--brass)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cage-stand"></div>
+      <div class="cage-legs"></div>
+    </div>
+
+    <div class="result-panel">
+      <div class="result-tray">
+        <span class="result-label" id="resultLabel">Just called</span>
+        <div id="emptyMsg" class="result-empty">Spin to draw the first one.</div>
+        <div class="result-ball" id="resultBall" aria-hidden="true"></div>
+        <div class="result-name" id="resultName"></div>
+      </div>
+
+      <button class="spin-btn" id="spinBtn">Spin the cage</button>
+
+      <div class="secondary-row">
+        <button class="btn-ghost" id="refillBtn" type="button">Refill cage</button>
+      </div>
+
+      <p class="remaining" id="remainingText"></p>
+      <div class="sr-only" role="status" aria-live="polite" id="liveRegion"></div>
+    </div>
+  </div>
+
+  <div class="history">
+    <h2>Called so far</h2>
+    <div class="history-chips" id="historyChips">
+      <span class="history-empty">Nothing called yet.</span>
+    </div>
+  </div>
+
+  <details class="settings" id="settingsPanel">
+    <summary>Set up the cage</summary>
+    <form id="settingsForm">
+      <div class="source-choice">
+        <label><input type="radio" name="source" value="numbers" checked> Numbers</label>
+        <label><input type="radio" name="source" value="letters"> Letters</label>
+        <label><input type="radio" name="source" value="custom"> Names or list</label>
+      </div>
+
+      <div class="source-fields" data-field="numbers">
+        <label>From
+          <input type="number" id="numMin" value="1">
+        </label>
+        <label>To
+          <input type="number" id="numMax" value="30">
+        </label>
+      </div>
+
+      <div class="source-fields" data-field="letters" hidden>
+        <label>From
+          <select id="letMin"></select>
+        </label>
+        <label>To
+          <select id="letMax"></select>
+        </label>
+      </div>
+
+      <div class="source-fields" data-field="custom" hidden>
+        <label>One item per line, or separated by commas
+          <textarea id="customList" placeholder="Alice&#10;Bilal&#10;Priya&#10;Sam"></textarea>
+        </label>
+      </div>
+
+      <div class="settings-actions">
+        <button type="submit" class="btn-primary">Fill the cage</button>
+        <p class="settings-hint" id="settingsHint"></p>
+      </div>
+    </form>
+  </details>
+</div>
+
+<script>
+(function(){
+  const ballsLayer = document.getElementById('ballsLayer');
+  const spinBtn = document.getElementById('spinBtn');
+  const refillBtn = document.getElementById('refillBtn');
+  const resultBall = document.getElementById('resultBall');
+  const resultName = document.getElementById('resultName');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const remainingText = document.getElementById('remainingText');
+  const historyChips = document.getElementById('historyChips');
+  const liveRegion = document.getElementById('liveRegion');
+  const cageCrank = document.getElementById('cageCrank');
+  const settingsForm = document.getElementById('settingsForm');
+  const settingsHint = document.getElementById('settingsHint');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const letMin = document.getElementById('letMin');
+  const letMax = document.getElementById('letMax');
+  const numMin = document.getElementById('numMin');
+  const numMax = document.getElementById('numMax');
+  const customList = document.getElementById('customList');
+
+  const BALL_COLORS = ['ball-cream','ball-brass','ball-blue','ball-green','ball-maroon'];
+  const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  ALPHABET.forEach((ch,i)=>{
+    const o1 = document.createElement('option'); o1.value=i; o1.textContent=ch;
+    const o2 = document.createElement('option'); o2.value=i; o2.textContent=ch;
+    letMin.appendChild(o1);
+    letMax.appendChild(o2);
+  });
+  letMax.value = 25;
+
+  let fullSet = [];   // the full configured set, for refilling
+  let pool = [];       // remaining items this round
+  let called = [];     // history, most recent first
+  let spinning = false;
+  let sourceLabel = 'numbers 1–30';
+
+  function buildNumbers(min, max){
+    const items = [];
+    for(let n=min; n<=max; n++) items.push(String(n));
+    return items;
+  }
+  function buildLetters(from, to){
+    return ALPHABET.slice(from, to+1);
+  }
+  function parseCustom(text){
+    return text.split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
+  }
+
+  function toItems(labels){
+    return labels.map((label,i)=>({ id: i+'-'+label, label }));
+  }
+
+  function shuffleColorFor(i){
+    return BALL_COLORS[i % BALL_COLORS.length];
+  }
+
+  function renderBalls(){
+    ballsLayer.innerHTML = '';
+    const count = Math.min(pool.length, 46);
+    for(let i=0;i<count;i++){
+      const pos = document.createElement('div');
+      pos.className = 'ball-pos';
+      const angle = Math.random()*Math.PI*2;
+      const radius = Math.random()*37;
+      const x = 50 + radius*Math.cos(angle);
+      const y = 50 + radius*Math.sin(angle);
+      pos.style.left = x+'%';
+      pos.style.top = y+'%';
+
+      const ball = document.createElement('div');
+      ball.className = 'ball ' + shuffleColorFor(i);
+      const dx = (Math.random()*16-8).toFixed(1)+'px';
+      const dy = (Math.random()*16-8).toFixed(1)+'px';
+      ball.style.setProperty('--dx', dx);
+      ball.style.setProperty('--dy', dy);
+      ball.style.animationDuration = (spinning ? (0.22+Math.random()*0.2) : (1.5+Math.random()*1.3)) + 's';
+      ball.style.animationDelay = (Math.random()*1.2)+'s';
+
+      pos.appendChild(ball);
+      ballsLayer.appendChild(pos);
+    }
+  }
+
+  function updateRemaining(){
+    if(pool.length === 0){
+      remainingText.innerHTML = 'The cage is empty. <strong>Refill</strong> to play again.';
+    } else {
+      remainingText.innerHTML = '<strong>'+pool.length+'</strong> of '+fullSet.length+' left in the cage';
+    }
+  }
+
+  function renderHistory(){
+    if(called.length === 0){
+      historyChips.innerHTML = '<span class="history-empty">Nothing called yet.</span>';
+      return;
+    }
+    historyChips.innerHTML = '';
+    called.forEach((item, idx)=>{
+      const chip = document.createElement('span');
+      chip.className = 'chip' + (idx===0 ? ' latest' : '');
+      chip.textContent = item.label;
+      historyChips.appendChild(chip);
+    });
+  }
+
+  function resetRound(){
+    pool = fullSet.slice();
+    called = [];
+    resultBall.classList.remove('show');
+    resultName.classList.remove('show');
+    resultBall.textContent = '';
+    resultName.textContent = '';
+    emptyMsg.style.display = 'block';
+    renderBalls();
+    renderHistory();
+    updateRemaining();
+    spinBtn.disabled = false;
+    spinBtn.textContent = 'Spin the cage';
+  }
+
+  function setPoolFromInputs(){
+    const type = settingsForm.querySelector('input[name=source]:checked').value;
+    let labels = [];
+    let hint = '';
+    let ok = true;
+
+    if(type === 'numbers'){
+      let min = parseInt(numMin.value, 10);
+      let max = parseInt(numMax.value, 10);
+      if(Number.isNaN(min) || Number.isNaN(max)){
+        ok = false; hint = 'Enter whole numbers for both ends of the range.';
+      } else {
+        if(min > max){ const t=min; min=max; max=t; }
+        if(max - min + 1 > 2000){
+          ok = false; hint = 'That range is a bit large — try 2000 numbers or fewer.';
+        } else {
+          labels = buildNumbers(min, max);
+          sourceLabel = 'numbers '+min+'–'+max;
+        }
+      }
+    } else if(type === 'letters'){
+      let from = parseInt(letMin.value, 10);
+      let to = parseInt(letMax.value, 10);
+      if(from > to){ const t=from; from=to; to=t; }
+      labels = buildLetters(from, to);
+      sourceLabel = 'letters '+ALPHABET[from]+'–'+ALPHABET[to];
+    } else {
+      labels = parseCustom(customList.value);
+      if(labels.length < 2){
+        ok = false; hint = 'Add at least two items, one per line or separated by commas.';
+      } else {
+        sourceLabel = labels.length+' items';
+      }
+    }
+
+    if(!ok){
+      settingsHint.textContent = hint;
+      settingsHint.classList.remove('ok');
+      return false;
+    }
+
+    fullSet = toItems(labels);
+    settingsHint.textContent = 'Cage filled with '+sourceLabel+'.';
+    settingsHint.classList.add('ok');
+    resetRound();
+    return true;
+  }
+
+  function pickWinner(){
+    const idx = Math.floor(Math.random()*pool.length);
+    const item = pool[idx];
+    pool.splice(idx,1);
+    return item;
+  }
+
+  function reveal(item){
+    emptyMsg.style.display = 'none';
+    const isShort = item.label.length <= 3;
+    resultBall.textContent = isShort ? item.label : item.label.slice(0,2).toUpperCase();
+    resultBall.classList.remove('show');
+    void resultBall.offsetWidth;
+    resultBall.classList.add('show');
+
+    resultName.textContent = item.label;
+    resultName.classList.remove('show');
+    void resultName.offsetWidth;
+    resultName.classList.add('show');
+
+    called.unshift(item);
+    renderHistory();
+    updateRemaining();
+    liveRegion.textContent = 'Called: ' + item.label;
+  }
+
+  function spin(){
+    if(spinning || pool.length === 0) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    spinBtn.textContent = 'Spinning…';
+    ballsLayer.classList.add('spinning');
+    cageCrank.classList.add('spinning');
+    renderBalls();
+
+    const duration = 1800 + Math.random()*1400;
+    setTimeout(()=>{
+      const winner = pickWinner();
+      ballsLayer.classList.remove('spinning');
+      cageCrank.classList.remove('spinning');
+      renderBalls();
+      reveal(winner);
+      spinning = false;
+      if(pool.length === 0){
+        spinBtn.disabled = true;
+        spinBtn.textContent = 'Cage is empty';
+      } else {
+        spinBtn.disabled = false;
+        spinBtn.textContent = 'Spin the cage';
+      }
+    }, duration);
+  }
+
+  settingsForm.querySelectorAll('input[name=source]').forEach(radio=>{
+    radio.addEventListener('change', ()=>{
+      settingsForm.querySelectorAll('.source-fields').forEach(el=>{
+        el.hidden = el.dataset.field !== radio.value;
+      });
+    });
+  });
+
+  settingsForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    if(setPoolFromInputs()){
+      settingsPanel.removeAttribute('open');
+    }
+  });
+
+  spinBtn.addEventListener('click', spin);
+  refillBtn.addEventListener('click', resetRound);
+
+  // initial fill: numbers 1-30
+  fullSet = toItems(buildNumbers(1,30));
+  resetRound();
+})();
+</script>
+</body>
+</html>
